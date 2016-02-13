@@ -1,7 +1,6 @@
-import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, String, Integer, Column, ForeignKey
+from sqlalchemy.orm import sessionmaker, configure_mappers, relationship
 from sqlalchemy_continuum import make_versioned
 
 
@@ -14,16 +13,39 @@ class Article(Base):
     __versioned__ = {}
     __tablename__ = 'article'
 
-    id = sa.Column(sa.Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    categories = relationship(
+        'Category',
+        secondary='article_category',
+        back_populates='articles',
+    )
+    author = Column(String)
 
 
-sa.orm.configure_mappers()
+class ArticleCategory(Base):
+    __tablename__ = 'article_category'
+    id = Column(Integer, primary_key=True)
+    category_id = Column(Integer, ForeignKey('category.id'), nullable=False)
+    article_id = Column(Integer, ForeignKey('article.id'), nullable=False)
 
-engine = create_engine('sqlite:///db.db', echo=True)
+
+class Category(Base):
+    __tablename__ = 'category'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    articles = relationship(
+        'Article',
+        secondary='article_category',
+        back_populates='categories',
+    )
+
+
+configure_mappers()
+
+engine = create_engine('postgres://jason:123@localhost/festeasy', echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 
 
-# after you have defined all your models, call configure_mappers:
-
+Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
