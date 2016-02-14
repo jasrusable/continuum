@@ -10,8 +10,8 @@ make_versioned(user_cls=None)
 
 
 class Article(Base):
-    __versioned__ = {}
     __tablename__ = 'article'
+    __versioned__ = {}
 
     id = Column(Integer, primary_key=True)
     categories = relationship(
@@ -31,6 +31,8 @@ class ArticleCategory(Base):
 
 class Category(Base):
     __tablename__ = 'category'
+    __versioned__ = {}
+
     id = Column(Integer, primary_key=True)
     name = Column(String)
     articles = relationship(
@@ -42,10 +44,19 @@ class Category(Base):
 
 configure_mappers()
 
-engine = create_engine('postgres://jason:123@localhost/festeasy', echo=True)
+postgres = 'postgres://jason:123@localhost/test'
+sqlite = 'sqlite://'
+
+engine = create_engine(sqlite, echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 
 
 Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
+
+a = Article(author='Jason')
+c = Category(name='Some Category')
+a.categories.append(c)
+session.add(a)
+session.commit()
